@@ -6,7 +6,7 @@ import threading
 import traceback
 from datetime import datetime
 
-# Asegurar encoding UTF-8 en Windows para stdout/stderr
+# Fix encoding
 if hasattr(sys.stdout, 'reconfigure'):
     try:
         sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -38,11 +38,11 @@ def log(msg, icon=''):
     except UnicodeEncodeError:
         print(text.encode('ascii', errors='replace').decode('ascii'))
 
-log("═" * 50)
-log("Sistema de Detección de Cascos", "🚀")
-log("═" * 50)
 
-# ── Patch torch.load ───────────────────────────────────────────────────────────
+log("Sistema de Detección de Cascos", "🚀")
+
+
+# PATCH TORCH.LOAD
 _orig_load = torch.load
 def _patched_load(*a, **kw):
     kw.setdefault('weights_only', False)
@@ -61,12 +61,12 @@ from core.utils import load_config
 from data.database import Database
 from data.models import Metrics, Detection, Camera
 
-# ── Config ─────────────────────────────────────────────────────────────────────
+# CONFIG
 log("Cargando configuración...", "📦")
 config = load_config('config/config.yaml')
 log(f"  {len(config.get('cameras', []))} cámaras configuradas")
 
-# ── Flask ──────────────────────────────────────────────────────────────────────
+# FLASK
 app = Flask(__name__, static_folder='../static', template_folder='../static')
 app.config['SECRET_KEY'] = 'motorcycle-helmet-detection-secret'
 CORS(app)
@@ -77,7 +77,7 @@ if not config.get('logging', {}).get('access_logs', False):
     _logging.getLogger('werkzeug').disabled = True
     _logging.getLogger('werkzeug').setLevel(_logging.ERROR)
 
-# ── Base de datos ──────────────────────────────────────────────────────────────
+# BASE DE DATOS
 log("Inicializando base de datos...", "🗄️")
 db_path = config.get('paths', {}).get('database', 'data/detections.db')
 db = Database(db_path=db_path)
@@ -97,7 +97,7 @@ for pattern in [
         except: pass
 os.makedirs(crops_dir, exist_ok=True)
 
-# ── Estado global ──────────────────────────────────────────────────────────────
+# ESTADO GLOBAL
 camera_metrics  = {}
 camera_threads  = {}
 stop_processing = False
@@ -121,7 +121,7 @@ def io_worker():
 
 threading.Thread(target=io_worker, daemon=True).start()
 
-# Construir lista completa de cámaras desde config
+# Setup cameras
 cameras_list = []
 for cam_cfg in config.get('cameras', []):
     cam = Camera(
@@ -132,7 +132,7 @@ for cam_cfg in config.get('cameras', []):
 
 log(f"  {len(cameras_list)} cámaras")
 
-# ── Modelos ────────────────────────────────────────────────────────────────────
+# MODELOS
 log(f"Cargando clasificador global compartido...", "🤖")
 camera_detectors = {}
 global_classifier = None
@@ -148,7 +148,7 @@ except Exception as e:
     raise SystemExit(1)
 
 
-# ── Funciones de control ───────────────────────────────────────────────────────
+# FUNCIONES DE CONTROL
 
 def _cleanup_all():
     """Limpia estado volátil: métricas y detector."""
@@ -196,7 +196,7 @@ def _start_cameras(cameras):
         time.sleep(1)
 
 
-# ── Procesamiento por cámara ───────────────────────────────────────────────────
+# PROCESAMIENTO POR CÁMARA
 
 def process_camera(camera):
     global stop_processing, active_cameras
@@ -276,7 +276,7 @@ def process_camera(camera):
                 riders_ready      = detections['riders_ready_to_process']
                 all_tracking_crops = detections.get('all_tracking_crops', [])
 
-                # Solo loguear en consola si hubo actividad (alguna métrica > 0)
+                # Log if activity
                 if len(raw_dets) > 0 or len(duplicate_riders) > 0 or len(classified_riders) > 0 or len(riders_ready) > 0:
                     n_motos   = sum(1 for d in raw_dets if 'moto' in d[5].lower() or 'motor' in d[5].lower())
                     n_cabezas = sum(1 for d in raw_dets if 'cabeza' in d[5].lower() or 'torso' in d[5].lower() or 'head' in d[5].lower())
@@ -286,7 +286,7 @@ def process_camera(camera):
                           f"Ya trackeada: {len(duplicate_riders)} | "
                           f"Clasificadas: {len(classified_riders)}")
 
-                # ── Persistencia y alertas ─────────────────────────────────────
+                # PERSISTENCIA Y ALERTAS
                 crops_dir = config.get('paths', {}).get('crops_dir', 'crops')
                 crops_base = f"{crops_dir}/cam_{cam_id}"
                 
@@ -321,7 +321,7 @@ def process_camera(camera):
                     helmet_conf    = rd['helmet_confidence']
                     pseudo_id      = rd['track_id']
 
-                    # La DB es rápida (SQLite), la mantenemos síncrona para que no haya race conditions en lecturas de la UI
+                    # Sync DB insert
                     db.insert_detection(Detection(
                         timestamp=time.time(),
                         bbox=[int(x1), int(y1), int(x2), int(y2)],
@@ -450,7 +450,7 @@ def _on_camera_finished(cam_id, cam_name, is_error=False):
         log("Todas las cámaras finalizaron", "🏁")
 
 
-# ── Rutas HTTP ─────────────────────────────────────────────────────────────────
+# RUTAS HTTP
 
 def reload_cameras():
     global config, cameras_list
@@ -650,7 +650,7 @@ def export_violations_csv():
 
 
 
-# ── WebSocket ──────────────────────────────────────────────────────────────────
+# WEBSOCKET
 
 @socketio.on('connect')
 def handle_connect():
@@ -661,14 +661,14 @@ def handle_disconnect():
     pass
 
 
-# ── Arranque ───────────────────────────────────────────────────────────────────
+# ARRANQUE
 # NO se inicia procesamiento automático.
 # El usuario elige el modo desde la interfaz web, que llama a POST /api/start.
 
 if __name__ == '__main__':
     log("Servidor en modo de espera (sin procesamiento automático)", "⏳")
     log(f"Abrir http://{config['server']['host']}:{config['server']['port']}", "🌐")
-    log("═" * 50)
+    
     socketio.run(app,
                  host=config['server']['host'],
                  port=config['server']['port'],

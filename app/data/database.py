@@ -290,7 +290,7 @@ class Database:
         conn = self._get_connection()
         cursor = conn.cursor()
         
-        # Obtener conteos por cámara
+        # Counts per camera
         cursor.execute('''
             SELECT camera_id, helmet_status, COUNT(*) as count
             FROM detections
@@ -312,7 +312,7 @@ class Database:
             elif 'sin' in status.lower():
                 cam_stats[cid]['sin_casco'] = row['count']
         
-        # Combinar con coordenadas de las cámaras
+        # Merge with coords
         result = []
         for cam in cameras_config:
             cid = cam['id']
@@ -408,7 +408,7 @@ class Database:
                     'detections': cam_detections_map.get(cid, 0)
                 })
         
-        # Violaciones agrupadas por hora usando strftime('%H:00', datetime)
+        # Violations by hour
         cursor.execute('''
             SELECT strftime('%H:00', datetime) as hour, COUNT(*) as violations
             FROM violations

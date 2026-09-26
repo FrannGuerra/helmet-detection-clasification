@@ -6,7 +6,7 @@ __pycache__/
 *$py.class
 .pytest_cache/
 
-# Modelos de IA (Pesos)
+# Modelos (Pesos)
 *.pt
 *.onnx
 

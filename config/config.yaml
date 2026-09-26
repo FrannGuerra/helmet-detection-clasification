@@ -21,7 +21,7 @@ video:
 
 # ── Detección ──────────────────────────────────────────────────────────────────
 # confidence_threshold:  Confianza mínima para considerar que se detectó un rider.
-# process_interval:      Cada cuántos segundos se analiza un frame con la IA.
+# process_interval:      Cada cuántos segundos se analiza un frame con el modelo
 #                        Valores más bajos = más procesamiento, más CPU/GPU.
 detection:
   confidence_threshold: 0.15

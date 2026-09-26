@@ -25,7 +25,7 @@ let metricsInterval = null;
 let heatmapInterval = null;
 
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+// INIT
 // Al cargar la página: obtener la lista completa de cámaras y mostrar el selector.
 
 fetch('/api/cameras')
@@ -48,7 +48,7 @@ if (document.readyState !== 'loading') {
 document.addEventListener('click', unlockAudioContext, { once: true });
 
 
-// ── Selector de Modo ──────────────────────────────────────────────────────────
+// SELECTOR DE MODO
 
 async function startMode() {
     unlockAudioContext();
@@ -161,7 +161,7 @@ async function goBackToMenu() {
 }
 
 
-// ── Frontend State Reset ──────────────────────────────────────────────────────
+// FRONTEND STATE RESET
 
 function resetFrontendState() {
     alertCount = 0;
@@ -208,7 +208,7 @@ function resetFrontendState() {
 }
 
 
-// ── Auto-refresh Timers ───────────────────────────────────────────────────────
+// AUTO-REFRESH TIMERS
 
 function startAutoRefresh() {
     stopAutoRefresh(); // Limpiar previos por si acaso
@@ -222,7 +222,7 @@ function stopAutoRefresh() {
 }
 
 
-// ── Loading Overlay ───────────────────────────────────────────────────────────
+// LOADING OVERLAY
 
 function showLoadingOverlay(text) {
     const overlay = document.getElementById('loading-overlay');
@@ -236,7 +236,7 @@ function hideLoadingOverlay() {
 }
 
 
-// ── Camera Grid ───────────────────────────────────────────────────────────────
+// CAMERA GRID
 
 function createCameraGrid(cameras) {
     const grid = document.getElementById('camera-grid');
@@ -279,7 +279,7 @@ function createCameraGrid(cameras) {
 }
 
 
-// ── Video Players ─────────────────────────────────────────────────────────────
+// VIDEO PLAYERS
 
 function initVideoPlayer(cam) {
     if (cam.source.includes('youtube.com') || cam.source.includes('youtu.be')) {
@@ -326,7 +326,7 @@ function initVideoPlayer(cam) {
 }
 
 
-// ── Camera Selection ──────────────────────────────────────────────────────────
+// CAMERA SELECTION
 
 function selectCamera(camId) {
     selectedCameraId = selectedCameraId === camId ? null : camId;
@@ -345,7 +345,7 @@ function selectCamera(camId) {
 }
 
 
-// ── Map ───────────────────────────────────────────────────────────────────────
+// MAP
 
 function initMap(cameras) {
     const liveCams = cameras;
@@ -416,7 +416,7 @@ function updateHeatmap() {
 }
 
 
-// ── Time Filter ───────────────────────────────────────────────────────────────
+// TIME FILTER
 
 function changeTimeFilter(timeRange) {
     currentTimeFilter = timeRange;
@@ -432,7 +432,7 @@ function changeTimeFilter(timeRange) {
 }
 
 
-// ── Métricas globales ─────────────────────────────────────────────────────────
+// MÉTRICAS GLOBALES
 
 function updateAccumulatedMetrics() {
     if (!currentMode) return;
@@ -469,7 +469,7 @@ function updateCounter(id, val) {
 }
 
 
-// ── WebSocket ─────────────────────────────────────────────────────────────────
+// WEBSOCKET
 
 socket.on('connect',    () => updateConnectionStatus(true));
 socket.on('disconnect', () => updateConnectionStatus(false));
@@ -599,7 +599,7 @@ function addAlert(alert) {
     if (all.length > 20) all[all.length - 1].remove();
 }
 
-// ── Audio Notifications & Mute Toggle (F16-F19) ────────────────────────────────
+// AUDIO NOTIFICATIONS & MUTE TOGGLE (F16-F19)
 
 function unlockAudioContext() {
     if (isAudioUnlocked) return;
@@ -690,7 +690,7 @@ function updateAudioToggleUI() {
     }
 }
 
-// ── Actionable Alerts & Modal (F10-F15) ─────────────────────────────────────────
+// ACTIONABLE ALERTS & MODAL (F10-F15)
 
 function openAlertModal(alert) {
     if (!alert) return;
@@ -776,7 +776,7 @@ document.addEventListener('keydown', e => {
     }
 });
 
-// ── Dashboard & Analytics (F22-F27) ───────────────────────────────────────────
+// DASHBOARD & ANALYTICS (F22-F27)
 
 function switchTab(tab) {
     activeTab = tab;
@@ -976,7 +976,7 @@ function renderDashboardCharts(data) {
     }
 }
 
-// ── Export CSV Handler (F27) ──────────────────────────────────────────────────
+// EXPORT CSV HANDLER (F27)
 
 async function exportViolationsCSV() {
     const btn = document.getElementById('btn-export-csv');
@@ -1013,7 +1013,7 @@ async function exportViolationsCSV() {
 }
 
 
-// ── Visibility (solo HLS) ─────────────────────────────────────────────────────
+// VISIBILITY (SOLO HLS)
 
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) return;

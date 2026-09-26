@@ -105,7 +105,7 @@ class MotorcycleDetector:
         motos = []
         cabezas = []
 
-        # 1. Separar detecciones en motos y cabezas
+        # Separate detections
         for box, conf, cls, tid in zip(boxes, confidences, classes, track_ids):
             x1, y1, x2, y2 = map(int, box)
             x1 = max(0, x1)
@@ -141,7 +141,7 @@ class MotorcycleDetector:
         pil_img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         current_time = time.time()
 
-        # 2. Asociación geométrica y acumulación de frames
+        # Geometric association
         for moto in motos:
             track_id = moto['track_id']
             moto['cabezas_asociadas'] = []

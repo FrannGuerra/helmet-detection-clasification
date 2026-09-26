@@ -222,7 +222,7 @@ def analizar(video_path: str, intervalo: float, conf_det: float, conf_cls: float
     
     print(f'  Duración    : {duracion_seg:.1f}s  |  {total_frames} frames a {fps_video:.1f}fps')
     if procesar_todo:
-        print(f'  A analizar  : {total_frames} frames (100% de los frames por IA)\n')
+        print(f'  A analizar  : {total_frames} frames (100% de los frames)\n')
     else:
         print(f'  A analizar  : ~{int(duracion_seg / intervalo)} frames (1 cada {intervalo*1000:.0f}ms)\n')
 
