@@ -1,0 +1,61 @@
+# ==============================================================================
+# CONFIGURACIÓN DEL TRACKER
+# ==============================================================================
+
+# Motor de tracking (BoT-SORT es ideal porque soporta Re-Identificación visual)
+# Default: botsort
+tracker_type: botsort
+
+# --- 1. UMBRALES DE DETECCIÓN (Qué considera "moto" el tracker) ---
+
+# Si la confianza de YOLO baja de este valor, el tracker deja de seguirla con alta prioridad.
+# Default: 0.5
+track_high_thresh: 0.5
+
+# Fase de rescate: si la confianza cae entre track_low_thresh y track_high_thresh,
+# intenta asociarla con tracks perdidos.
+# Default: 0.1
+track_low_thresh: 0.1
+
+# Para que el sistema CREE un Track ID nuevo, la primera detección debe tener al menos esta conf.
+# Default: 0.6
+new_track_thresh: 0.5
+
+# --- 2. MEMORIA Y TIEMPO (Cuánto espera antes de darla por muerta) ---
+
+# IMPORTANTE: A ~10 FPS, 60 frames = 6 segundos. Si una moto se esconde detrás 
+# de un camión por 5 segundos, el tracker recuerda su posición.
+# Default: 30
+track_buffer: 90
+
+# --- 3. GEOMETRÍA Y MOVIMIENTO (Re-asociación espacial) ---
+
+# CLAVE: Distancia máxima permitida (Costo) para asociar detecciones.
+# -> Valores altos (ej: 0.8): Muy permisivo. Tolera que la moto dé "saltos" largos.
+# -> Valores bajos (ej: 0.2): Muy estricto. La moto debe estar en el mismo lugar casi exacto.
+# Default: 0.8
+match_thresh: 0.95
+
+# --- 4. APARIENCIA VISUAL Y ReID (Solo BOTSORT) ---
+# Compensación de movimiento de la cámara (Default: sparseOptFlow)
+# No lo activo porque no es necesario ya que las cámaras están fijas
+gmc_method: none
+
+# Activa la red neuronal de re-identificación visual (Default: False)
+with_reid: True
+
+# Extrae características de las imágenes detectadas para hacer el Re-Id (Default: osnet_x0_25)
+# auto: directamente usa los embeddings del modelo YOLOv8 entrenado, sin cargar un modelo extra
+model: auto
+
+# Distancia geométrica máxima para aplicar ReID. (0.0 a 1.0) (Default: 0.5)
+# Ponerlo en 0.0 permite que el tracker use ReID
+# Valores altos son más permisivos a que haga ReID
+proximity_thresh: 1.0
+
+# Nivel de exigencia visual para asociar con ReID (Default: 0.25)
+# Mas alto es más permisivo
+appearance_thresh: 0.9
+
+# Mezcla matemáticamente qué tan cerca están + cómo se ven + confianza inicial. (Default: True)
+fuse_score: True

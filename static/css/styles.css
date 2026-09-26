@@ -1,0 +1,444 @@
+/* Custom styles for the app */
+
+/* ===== UTILITIES ===== */
+
+.hidden {
+    display: none !important;
+}
+
+/* Smooth scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.5);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.7);
+}
+
+/* Glass morphism effects */
+.glass {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ===== MODE SELECTOR ===== */
+
+.mode-selector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+}
+
+.mode-selector-inner {
+    text-align: center;
+}
+
+.mode-btn-select {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 24px 36px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    color: #e2e8f0;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    min-width: 180px;
+}
+
+.mode-btn-select:hover {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.15);
+}
+
+.mode-btn-select:active {
+    transform: translateY(0);
+}
+
+/* ===== LOADING OVERLAY ===== */
+
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000000;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.15);
+    border-top-color: #818cf8;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ===== ANALYSIS COMPLETE BANNER ===== */
+
+.analysis-complete-banner {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+}
+
+/* ===== ANIMATIONS ===== */
+
+/* Pulse animation for alerts */
+@keyframes pulse-ring {
+    0% {
+        transform: scale(0.95);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(0.95);
+        opacity: 1;
+    }
+}
+
+.pulse-alert {
+    animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Counter animation */
+@keyframes counterPop {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.counter-update {
+    animation: counterPop 0.3s ease-out;
+}
+
+/* ===== MULTI-CAMERA GRID ===== */
+
+.camera-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.camera-card {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s ease;
+    aspect-ratio: 16 / 9;
+}
+
+.camera-card:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
+}
+
+.camera-card.selected {
+    border: 2px solid #3b82f6;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.camera-card video {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: contain;
+    background: #0a0a0a;
+    display: block;
+}
+
+.camera-bottom-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.95));
+    display: flex;
+    flex-direction: column;
+}
+
+.camera-label {
+    padding: 8px 10px 4px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.camera-label .cam-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.camera-label .cam-status {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.65rem;
+    color: #94a3b8;
+    flex-shrink: 0;
+}
+
+.camera-label .cam-status .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #22c55e;
+    animation: pulse-ring 2s infinite;
+}
+
+.camera-label .cam-status.error .dot {
+    background: #ef4444;
+    animation: none;
+}
+
+/* Camera flash effect when violation detected */
+@keyframes violation-flash {
+    0%, 100% { box-shadow: inset 0 0 0 0 transparent; }
+    25% { box-shadow: inset 0 0 30px rgba(239, 68, 68, 0.4); }
+    75% { box-shadow: inset 0 0 15px rgba(239, 68, 68, 0.2); }
+}
+
+.camera-card.violation-flash {
+    animation: violation-flash 1.5s ease-out;
+}
+
+/* ===== MAP STYLES ===== */
+
+#map-container {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+#map {
+    height: 350px;
+    width: 100%;
+    background: #0f172a;
+}
+
+/* Leaflet popup customization */
+.leaflet-popup-content-wrapper {
+    background: rgba(15, 23, 42, 0.95) !important;
+    color: #e2e8f0 !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(99, 102, 241, 0.3) !important;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+}
+
+.leaflet-popup-tip {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border: 1px solid rgba(99, 102, 241, 0.3) !important;
+}
+
+.leaflet-popup-content {
+    margin: 12px 16px !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.8rem !important;
+}
+
+.popup-title {
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    color: #a5b4fc;
+}
+
+.popup-stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+}
+
+.popup-stat .label {
+    color: #94a3b8;
+}
+
+.popup-stat .value {
+    font-weight: 600;
+}
+
+.popup-stat .value.green { color: #4ade80; }
+.popup-stat .value.red { color: #f87171; }
+.popup-stat .value.blue { color: #60a5fa; }
+
+/* Map time filter bar */
+.map-time-bar {
+    display: flex;
+    gap: 6px;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.map-time-btn {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+    color: #94a3b8;
+}
+
+.map-time-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+}
+
+.map-time-btn.active {
+    background: rgba(99, 102, 241, 0.3);
+    border-color: rgba(99, 102, 241, 0.5);
+    color: #a5b4fc;
+}
+
+/* ===== LAYOUT ===== */
+
+.main-layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 20px;
+}
+
+.left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .main-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .camera-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .camera-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.cam-mini-metrics {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0px 10px 8px 10px;
+    font-size: 0.75rem;
+}
+
+/* Efecto de parpadeo rojo para infracciones */
+@keyframes flash-red {
+    0% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.8) inset; border-color: #ef4444; }
+    100% { box-shadow: none; border-color: transparent; }
+}
+
+/* Efecto de latido para los números que se actualizan */
+@keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); color: #fff; }
+    100% { transform: scale(1); }
+}
+
+/* ===== MODAL & ALERT INTERACTION STYLES (F10-F15) ===== */
+.alert-card-interactive {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.alert-card-interactive:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.5);
+    transform: translateY(-1px);
+}
+
+#alert-modal {
+    transition: opacity 0.25s ease, backdrop-filter 0.25s ease;
+}
+
+#alert-modal-card {
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+}
+
+/* ===== DASHBOARD TABS & KPI STYLES (F22-F27) ===== */
+.nav-tab-btn {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.nav-tab-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.nav-tab-btn.active {
+    background: rgba(59, 130, 246, 0.25);
+    color: #60a5fa;
+    border-color: rgba(59, 130, 246, 0.5);
+}

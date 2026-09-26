@@ -1,0 +1,109 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# CONFIGURACIÓN DEL SISTEMA DE DETECCIÓN DE CASCOS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── Modelos ──────────────────────────────────────────────────────────────
+# detection:       Modelo YOLOv8 que detecta motociclistas (riders) en el frame.
+# classification:  Modelo YOLOv8-cls que clasifica si llevan casco o no.
+models:
+  detection: "detector.pt"
+  classification: "clasificador.pt"
+
+# ── Video ──────────────────────────────────────────────────────────────────────
+# fps:          Frames por segundo de lectura (para HLS).
+# resolution:   Resolución esperada del stream HLS [ancho, alto].
+# buffer_size:  Cantidad de frames en el buffer de lectura.
+video:
+  fps: 30
+  resolution: [1280, 720]
+  #resolution: [1920, 1080]
+  buffer_size: 20
+
+# ── Detección ──────────────────────────────────────────────────────────────────
+# confidence_threshold:  Confianza mínima para considerar que se detectó un rider.
+# process_interval:      Cada cuántos segundos se analiza un frame con la IA.
+#                        Valores más bajos = más procesamiento, más CPU/GPU.
+detection:
+  confidence_threshold: 0.15
+  inside_threshold: 0.80
+  # process_interval: Cada cuántos segundos procesar (0.1 = 10 FPS para tracking fluido)
+  process_interval: 0.05
+  frames_to_classify: 3
+
+# ── Clasificación ─────────────────────────────────────────────────────────────
+# confidence_threshold:  Confianza mínima del clasificador para aceptar el
+#                        resultado (con_casco / sin_casco).
+# imgsz:                 Tamaño de entrada del clasificador (definido en
+#                        entrenamiento, NO cambiar a menos que re-entrenes).
+classification:
+  confidence_threshold: 0.70
+  imgsz: 64
+
+# ── Alertas ────────────────────────────────────────────────────────────────────
+alerts:
+  enabled: true
+  sound: false
+
+# ── Servidor ───────────────────────────────────────────────────────────────────
+server:
+  host: "127.0.0.1"
+  port: 5000
+  debug: true
+
+# ── Logging ────────────────────────────────────────────────────────────────────
+# access_logs:  Si es true, Flask muestra los logs de cada request HTTP.
+logging:
+  access_logs: false
+
+# ── Rutas de Almacenamiento ───────────────────────────────────────────────────
+# Configura dónde se guardan los datos generados por el sistema.
+paths:
+  # Ubicación del archivo de base de datos SQLite
+  database: "data/detections.db"
+  # Directorio base donde se guardarán los recortes (crops) de los motociclistas
+  crops_dir: "crops"
+
+# ── Opciones de Guardado de Crops ──────────────────────────────────────────────
+save_crops:
+  motos: true  
+  cabezas: false
+  tracking: false
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CÁMARAS
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Cada cámara necesita los siguientes campos:
+#   - id:      Identificador numérico único.
+#   - name:    Nombre descriptivo que se muestra en la interfaz.
+#   - source:  URL del stream HLS (.m3u8)
+#   - lat:     Latitud (para el mapa de calor, solo relevante en modo en vivo).
+#   - lng:     Longitud (para el mapa de calor).
+#
+# IMPORTANTE:
+#   - Se pueden configurar hasta 4 cámaras.
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+cameras:
+  # - id: 1
+  #   name: "Tupã - Brasil x Caingangs"
+  #   source: "https://ipservice.aovivonanet.com.br:4433/hls/tupa-brasil-x-caingangs/index.m3u8"
+  #   #source: "https://www.youtube.com/watch?v=UemFRPrl1hk"
+  #   #source: "videos/demo.mp4"
+  #   lat: -21.925440 
+  #   lng: -50.522612
+
+  - id: 1
+    name: "Tupã - Tamoios x Aimorés"
+    source: "https://ipservice.aovivonanet.com.br:4433/hls/tupa-tamoios-x-aimores/index.m3u8"
+    #source: "https://www.youtube.com/watch?v=HdaWcBamcSA"
+    lat: -21.9345 #cambiar
+    lng: -50.5142 #cambiar
+
+  # - id: 2
+  #   name: "Tupã - Tamoios x Caingangs"
+  #   source: "https://ipservice.aovivonanet.com.br:4433/hls/tupa-tamois-x-caingangs/index.m3u8"
+  #   #source: "https://www.youtube.com/watch?v=WSm_r0eNl1E"
+  #   lat: -21.931868 
+  #   lng: -50.516178

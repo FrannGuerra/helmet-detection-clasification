@@ -1,0 +1,42 @@
+# Entornos virtuales y caché de Python
+venv_wsl/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Modelos de IA (Pesos)
+*.pt
+*.onnx
+
+# Bases de datos y archivos locales
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+
+# Archivos multimedia, recortes de imágenes y testing
+crops/
+*.mp4
+*.avi
+*.mkv
+videos/*
+!videos/.gitkeep
+tests/__pycache__/
+resultados/
+pruebas/
+
+# Carpetas ajenas al proyecto principal o fuera de scope
+.agents/
+.gemini/
+
+# Resultados de entrenamiento (dejando pasar las notebooks y readmes)
+training/runs/
+training/datasets/
+training/models/
+
+# Archivos del sistema operativo e IDEs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
