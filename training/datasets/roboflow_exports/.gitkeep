@@ -1,0 +1,2 @@
+# Este archivo sirve para que Git rastree la carpeta 'training/datasets/roboflow_exports' aunque esté vacía.
+# Todos los datasets exportados de roboflow deben colocarse aquí.

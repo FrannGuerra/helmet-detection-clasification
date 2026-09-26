@@ -32,7 +32,10 @@ pruebas/
 
 # Resultados de entrenamiento (dejando pasar las notebooks y readmes)
 training/runs/
-training/datasets/
+training/datasets/clasificador
+training/datasets/detector
+training/datasets/roboflow_exports/*
+!training/datasets/roboflow_exports/.gitkeep
 training/models/
 
 # Archivos del sistema operativo e IDEs
