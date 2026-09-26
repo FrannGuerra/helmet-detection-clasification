@@ -25,7 +25,7 @@ video:
 #                        Valores más bajos = más procesamiento, más CPU/GPU.
 detection:
   confidence_threshold: 0.15
-  inside_threshold: 0.80
+  inside_threshold: 0.90
   # process_interval: Cada cuántos segundos procesar (0.1 = 10 FPS para tracking fluido)
   process_interval: 0.05
   frames_to_classify: 3

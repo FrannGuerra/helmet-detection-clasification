@@ -113,8 +113,10 @@ En el mismo `config.yaml`, podés ajustar qué tan estricto y rápido es el sist
 
 ```yaml
 detection:
-  confidence_threshold: 0.15     # Si lo bajás, detecta más motos
-  process_interval: 0.05         # Analiza 1 frame cada 0.05 segundos (aprox 20 FPS).
+  confidence_threshold: 0.15     # Sensibilidad para detectar motos y cabezas
+  process_interval: 0.05         # Invervalo cada cuanto se analizan frames (Fracción de segundos) Aprox 20 FPS
+classification:
+  confidence_threshold: 0.50     # Sensibilidad para clasificar casco
 ```
 
 ### 4. Archivos Generados Automáticamente
