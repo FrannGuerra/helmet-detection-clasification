@@ -216,10 +216,17 @@ def process_camera(camera):
         log(f"Cam {cam_id} ({cam_name}) iniciando stream...", "📹")
         stream = None
         try:
+            # CAMBIO: Pasar resolución target y buffer_size reducido.
+            # VideoStream ahora usa ffmpeg con scale=WxH para fijar resolución,
+            # evitando recibir frames 4K de YouTube y procesando siempre el frame más reciente.
+            video_cfg = config.get('video', {})
+            resolution = video_cfg.get('resolution', [1280, 720])
             stream = VideoStream(
                 source=camera.source,
-                fps=config['video']['fps'],
-                buffer_size=config['video']['buffer_size']
+                fps=video_cfg.get('fps', 30),
+                buffer_size=2,
+                target_width=resolution[0],
+                target_height=resolution[1]
             ).start()
 
             time.sleep(2.0)
@@ -228,6 +235,7 @@ def process_camera(camera):
             frame_read_count  = 0
             interval_counter  = 0
             start_playback_time = time.time()
+            prev_wall, prev_read = None, 0
 
             while not stop_processing:
                 if cam_id in camera_error_flags:
@@ -262,6 +270,12 @@ def process_camera(camera):
                     continue
 
                 last_process_time = time.time()
+                
+                now = time.time()
+                if prev_wall is not None:
+                    print(f"[Timing] dt={now - prev_wall:.2f}s | frames leídos={stream.frame_count - prev_read} | stream_fps={stream.current_fps:.1f}")
+                prev_wall, prev_read = now, stream.frame_count
+                
                 interval_counter += 1
                 ts = int(time.time())
 
@@ -321,21 +335,25 @@ def process_camera(camera):
                     helmet_conf    = rd['helmet_confidence']
                     pseudo_id      = rd['track_id']
 
-                    # Sync DB insert
-                    db.insert_detection(Detection(
-                        timestamp=time.time(),
-                        bbox=[int(x1), int(y1), int(x2), int(y2)],
-                        class_name='rider',
-                        confidence=rd['detection_conf'],
-                        helmet_status=helmet_status,
-                        helmet_confidence=float(helmet_conf),
-                        camera_id=cam_id
-                    ))
+                    # CAMBIO: No insertar pendientes en la DB.
+                    # Las filas pendiente_1, pendiente_2 inflan total_detections
+                    # y generan ruido en el dashboard, aunque el query las filtre.
+                    is_pending = helmet_status.startswith('pendiente')
+                    if not is_pending:
+                        # Solo insertar detecciones finales (con_casco o sin_casco)
+                        db.insert_detection(Detection(
+                            timestamp=time.time(),
+                            bbox=[int(x1), int(y1), int(x2), int(y2)],
+                            class_name='rider',
+                            confidence=rd['detection_conf'],
+                            helmet_status=helmet_status,
+                            helmet_confidence=float(helmet_conf),
+                            camera_id=cam_id
+                        ))
 
                     crop_folder = os.path.join(crops_base, "motos", helmet_status)
-                    
+
                     # No guardar "pendientes" en la carpeta de motos finales
-                    is_pending = helmet_status.startswith('pendiente')
                     should_save_moto = save_motos and not is_pending
 
                     if should_save_moto:
@@ -424,7 +442,12 @@ def process_camera(camera):
             traceback.print_exc()
             if stream:
                 stream.stop()
-            
+
+            # CAMBIO: Resetear el detector al reconectar.
+            # Sin esto, el BYTETracker mantiene tracks de la sesión rota y puede
+            # asignar IDs viejos a motos nuevas, causando clasificaciones incorrectas.
+            camera_detectors[cam_id].reset()
+
             log(f"Cam {cam_id}: reconectando en 3s...", "🔄")
             socketio.emit('camera_reconnecting', {'cam_id': cam_id})
             time.sleep(3.0)
@@ -505,7 +528,10 @@ def start_processing_endpoint():
     return jsonify({
         'status': 'ok',
         'mode': mode,
-        'cameras': [c.to_dict() for c in cameras_to_start]
+        'cameras': [c.to_dict() for c in cameras_to_start],
+        'settings': {
+            'youtube_delay_ms': config.get('video', {}).get('youtube_delay_ms', 5000)
+        }
     })
 
 @app.route('/api/stop', methods=['POST'])

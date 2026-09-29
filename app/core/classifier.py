@@ -6,11 +6,10 @@ from ultralytics import YOLO
 
 class HelmetClassifier:
     """
-    Clasificador de cascos usando YOLOv8m-cls.
-    
-    Recibe imágenes PIL (crops de riders) y devuelve (clase, confianza).
-    Ultralytics maneja internamente el resize a imgsz=224, consistente
-    con cómo fue entrenado el modelo (crop_fraction=1.0, scale=0.0).
+    Clasificador de cascos usando YOLOv8-cls.
+
+    Recibe imágenes PIL (crops de cabezas) y devuelve (clase, confianza).
+    Tamaño de entrada: 64x64 px (IMGSZ = 64, definido en entrenamiento).
     """
 
     IMGSZ = 64  # Tamaño de entrada del modelo (fijo, definido en entrenamiento)

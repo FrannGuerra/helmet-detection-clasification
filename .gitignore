@@ -9,6 +9,7 @@ __pycache__/
 # Modelos (Pesos)
 *.pt
 *.onnx
+*.engine
 
 # Bases de datos y archivos locales
 data/*.db

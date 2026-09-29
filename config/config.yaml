@@ -6,37 +6,53 @@
 # detection:       Modelo YOLOv8 que detecta motociclistas (riders) en el frame.
 # classification:  Modelo YOLOv8-cls que clasifica si llevan casco o no.
 models:
-  detection: "detector.pt"
+  detection: "detector.engine"
   classification: "clasificador.pt"
 
 # ── Video ──────────────────────────────────────────────────────────────────────
 # fps:          Frames por segundo de lectura (para HLS).
-# resolution:   Resolución esperada del stream HLS [ancho, alto].
+# resolution:   Resolución de salida de ffmpeg [ancho, alto].
+#               ffmpeg reescala el stream a esta resolución antes de entregar frames.
+#               El modelo trabaja a 1280px max, no tiene sentido recibir 1080p+ en bruto.
 # buffer_size:  Cantidad de frames en el buffer de lectura.
+#               CAMBIO: 2 (antes 20). Cola corta = siempre procesa el frame más reciente.
 video:
-  fps: 30
+  fps: 8
   resolution: [1280, 720]
-  #resolution: [1920, 1080]
-  buffer_size: 20
+  buffer_size: 2
+  youtube_delay_ms: 0000
 
 # ── Detección ──────────────────────────────────────────────────────────────────
-# confidence_threshold:  Confianza mínima para considerar que se detectó un rider.
-# process_interval:      Cada cuántos segundos se analiza un frame con el modelo
-#                        Valores más bajos = más procesamiento, más CPU/GPU.
+# confidence_threshold:  Confianza mínima para motos (umbral bajo, el tracker filtra después).
+# head_confidence:       Confianza mínima para cabezas (más estricto que motos).
+# inside_threshold:      Fracción mínima de la cabeza que debe estar dentro del bbox de moto.
+#                        CAMBIO: 0.75 (antes 0.90). El 0.90 perdía cabezas en el borde superior.
+# process_interval:      Cada cuántos segundos se analiza un frame (0.05 = ~20 FPS target).
+# frames_to_classify:    Mínimo de frames de buena calidad antes de poder clasificar.
+# max_frames_to_collect: Máximo de frames a acumular antes de forzar clasificación.
+#                        NUEVO: acumula los mejores frames por calidad, no los primeros N.
+# min_head_size:         Lado mínimo del bbox de cabeza en px. Menor a esto no clasifica.
+# imgsz:                 Tamaño de imagen para inferencia del detector (explícito).
+# effective_fps:         FPS efectivo real del sistema (para el Kalman filter del tracker).
 detection:
   confidence_threshold: 0.15
-  inside_threshold: 0.90
-  # process_interval: Cada cuántos segundos procesar (0.1 = 10 FPS para tracking fluido)
-  process_interval: 0.05
-  frames_to_classify: 3
+  head_confidence: 0.25
+  inside_threshold: 0.75
+  process_interval: 0.0
+  frames_to_classify: 6
+  max_frames_to_collect: 10
+  min_head_size: 10
+  imgsz: 960
+  effective_fps: 8
 
 # ── Clasificación ─────────────────────────────────────────────────────────────
-# confidence_threshold:  Confianza mínima del clasificador para aceptar el
-#                        resultado (con_casco / sin_casco).
+# confidence_threshold:  Confianza mínima del clasificador para contar como sin_casco.
+#                        CAMBIO: 0.60 (antes 0.80). Con 0.80, un sin_casco con confianza 0.79
+#                        se contaba como con_casco (falso negativo). Bajando a 0.60 lo capturamos.
 # imgsz:                 Tamaño de entrada del clasificador (definido en
 #                        entrenamiento, NO cambiar a menos que re-entrenes).
 classification:
-  confidence_threshold: 0.70
+  confidence_threshold: 0.60
   imgsz: 64
 
 # ── Alertas ────────────────────────────────────────────────────────────────────
@@ -46,7 +62,7 @@ alerts:
 
 # ── Servidor ───────────────────────────────────────────────────────────────────
 server:
-  host: "127.0.0.1"
+  host: "0.0.0.0"
   port: 5000
   debug: true
 
@@ -90,20 +106,19 @@ cameras:
   #   name: "Tupã - Brasil x Caingangs"
   #   source: "https://ipservice.aovivonanet.com.br:4433/hls/tupa-brasil-x-caingangs/index.m3u8"
   #   #source: "https://www.youtube.com/watch?v=UemFRPrl1hk"
-  #   #source: "videos/demo.mp4"
-  #   lat: -21.925440 
-  #   lng: -50.522612
+  #   lat: -21.925451
+  #   lng: -50.522564
 
   - id: 1
     name: "Tupã - Tamoios x Aimorés"
     source: "https://ipservice.aovivonanet.com.br:4433/hls/tupa-tamoios-x-aimores/index.m3u8"
     #source: "https://www.youtube.com/watch?v=HdaWcBamcSA"
-    lat: -21.9345 #cambiar
-    lng: -50.5142 #cambiar
+    lat: -21.928436
+    lng: -50.512060
 
-  # - id: 2
-  #   name: "Tupã - Tamoios x Caingangs"
-  #   source: "https://ipservice.aovivonanet.com.br:4433/hls/tupa-tamois-x-caingangs/index.m3u8"
-  #   #source: "https://www.youtube.com/watch?v=WSm_r0eNl1E"
-  #   lat: -21.931868 
-  #   lng: -50.516178
+  - id: 2
+    name: "Tupã - Tamoios x Caingangs"
+    source: "https://ipservice.aovivonanet.com.br:4433/hls/tupa-tamois-x-caingangs/index.m3u8"
+    #source: "https://www.youtube.com/watch?v=WSm_r0eNl1E"
+    lat: -21.931936
+    lng: -50.516157
