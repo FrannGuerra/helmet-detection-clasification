@@ -1,0 +1,51 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# CONFIGURACIÓN OFFLINE (PARA ANALIZAR VIDEOS)
+# ═══════════════════════════════════════════════════════════════════════════════
+# Para ver la documentación de qué hace cada parámetro, revisar config.yaml.
+# Este archivo está optimizado para procesar videos .mp4 a máxima precisión
+# sin importar el tiempo de procesamiento.
+
+models:
+  detection: "detector.engine"
+  classification: "clasificador.pt"
+
+video:
+  fps: 30
+  resolution: [1280, 720]
+  buffer_size: 2
+
+detection:
+  confidence_threshold: 0.40
+  head_confidence: 0.50
+  inside_threshold: 0.75
+  process_interval: 0.0
+  frames_to_classify: 20
+  max_frames_to_collect: 60
+  min_head_size: 15
+  imgsz: 960
+  effective_fps: 30
+
+classification:
+  confidence_threshold: 0.75
+  imgsz: 64
+
+alerts:
+  enabled: false
+  sound: false
+
+server:
+  host: "0.0.0.0"
+  port: 5000
+  debug: false
+
+logging:
+  access_logs: false
+
+paths:
+  database: "data/detections.db"
+  crops_dir: "crops"
+
+save_crops:
+  motos: true  
+  cabezas: false
+  tracking: false

@@ -3,83 +3,99 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # ── Modelos ──────────────────────────────────────────────────────────────
-# detection:       Modelo YOLOv8 que detecta motociclistas (riders) en el frame.
-# classification:  Modelo YOLOv8-cls que clasifica si llevan casco o no.
+# models: Rutas a los modelos de procesamiento
+#   - detection: Modelo YOLO que busca motos y cabezas en toda la pantalla.
+#                Si dice ".engine" corre más rápido usando TensorRT.
+#                Si dice ".pt" corre en PyTorch estándar.
+#   - classification: Modelo YOLO-cls especializado en recortar la cabeza y decir si
+#                     tiene o no tiene casco.
 models:
   detection: "detector.engine"
   classification: "clasificador.pt"
 
-# ── Video ──────────────────────────────────────────────────────────────────────
-# fps:          Frames por segundo de lectura (para HLS).
-# resolution:   Resolución de salida de ffmpeg [ancho, alto].
-#               ffmpeg reescala el stream a esta resolución antes de entregar frames.
-#               El modelo trabaja a 1280px max, no tiene sentido recibir 1080p+ en bruto.
-# buffer_size:  Cantidad de frames en el buffer de lectura.
-#               CAMBIO: 2 (antes 20). Cola corta = siempre procesa el frame más reciente.
+# ── Video (Control de Tráfico) ────────────────────────────────────────────────
+# Configura cómo se obtiene el video de la cámara antes de analizarlo.
+#   - fps: La velocidad a la que FFmpeg extrae las fotos del stream en vivo.
+#   - resolution: Achica el video nativo (ej: 1080p) a este tamaño en RAM.
+#   - buffer_size: Cantidad de fotos que se guardan en la "sala de espera".
+#                  Si se usa un número muy grande (ej: 20) se ve el video con retraso.
 video:
-  fps: 8
+  fps: 10
   resolution: [1280, 720]
-  buffer_size: 2
-  youtube_delay_ms: 0000
+  buffer_size: 1
 
-# ── Detección ──────────────────────────────────────────────────────────────────
-# confidence_threshold:  Confianza mínima para motos (umbral bajo, el tracker filtra después).
-# head_confidence:       Confianza mínima para cabezas (más estricto que motos).
-# inside_threshold:      Fracción mínima de la cabeza que debe estar dentro del bbox de moto.
-#                        CAMBIO: 0.75 (antes 0.90). El 0.90 perdía cabezas en el borde superior.
-# process_interval:      Cada cuántos segundos se analiza un frame (0.05 = ~20 FPS target).
-# frames_to_classify:    Mínimo de frames de buena calidad antes de poder clasificar.
-# max_frames_to_collect: Máximo de frames a acumular antes de forzar clasificación.
-#                        NUEVO: acumula los mejores frames por calidad, no los primeros N.
-# min_head_size:         Lado mínimo del bbox de cabeza en px. Menor a esto no clasifica.
-# imgsz:                 Tamaño de imagen para inferencia del detector (explícito).
-# effective_fps:         FPS efectivo real del sistema (para el Kalman filter del tracker).
+# ── Detección ──────────────────────────────────────────
+# Reglas matemáticas
+#   - confidence_threshold: Umbral necesario para aceptar una MOTO.
+#                           Como usamos un Tracker, conviene ponerlo bajo para que no pierda motos
+#   - head_confidence: Umbral necesario para aceptar una CABEZA.
+#                      Lo uso un poco más alto que el de moto, porque después se usa para clasificar y no quiero clasificar basura.
+#   - inside_threshold: Porcentaje de la cabeza que DEBE estar DENTRO del recuadro de la moto.
+#                       Trato de maximizarlo para no tomar cabezas de peatones o de otras motos
+#   - process_interval: Tiempo de salto. En 0.0 procesa TODO lo que le manda FFmpeg.
+#                       Conviene modificar directamente los FPS que se consumen y dejar esto en 0.
+#   - frames_to_classify: Votos IDÉNTICOS (ej: 6 veces 'sin_casco') necesarios para 
+#                         dictar una sentencia rápida. Si la IA junta estos votos, 
+#                         clasifica a la moto al instante sin esperar más.
+#   - max_frames_to_collect: Memoria máxima de evidencias. Guarda en RAM los X mejores cuadros 
+#                            de la moto. Además, funciona como límite de tiempo: 
+#                            si el total de frames que se vió la moto es el DOBLE de este valor, 
+#                            el sistema fuerza un veredicto definitivo 
+#                            contando la clase que más votos tiene.
+#   - min_head_size: Tamaño mínimo en píxeles de una cabeza para intentar clasificarla.
+#   - imgsz: El tamaño al que YOLO achica la foto internamente.
+#   - effective_fps: Etiqueta informativa para los logs en consola.
 detection:
-  confidence_threshold: 0.15
-  head_confidence: 0.25
-  inside_threshold: 0.75
+  confidence_threshold: 0.30
+  head_confidence: 0.50
+  inside_threshold: 0.85
   process_interval: 0.0
-  frames_to_classify: 6
-  max_frames_to_collect: 10
-  min_head_size: 10
+  frames_to_classify: 7
+  max_frames_to_collect: 14
+  min_head_size: 15
   imgsz: 960
-  effective_fps: 8
+  effective_fps: 10
 
-# ── Clasificación ─────────────────────────────────────────────────────────────
-# confidence_threshold:  Confianza mínima del clasificador para contar como sin_casco.
-#                        CAMBIO: 0.60 (antes 0.80). Con 0.80, un sin_casco con confianza 0.79
-#                        se contaba como con_casco (falso negativo). Bajando a 0.60 lo capturamos.
-# imgsz:                 Tamaño de entrada del clasificador (definido en
-#                        entrenamiento, NO cambiar a menos que re-entrenes).
+# ── Clasificación ────────────────────────────────────────────
+#   - confidence_threshold: Umbral exigido para tomar una clasificación como verdadera.
+#                           Implicancia: Si dice "sin_casco" pero con una confianza de 0.55
+#                           se marca el frame como "indeterminado" y no suma votos,
+#                           evitando que una clasificación "no confiable" genere un falso positivo.
+#   - imgsz: Tamaño del recorte de la cabeza.
+#            (Uso con el que fue entrenado el modelo, NO CAMBIAR)
 classification:
-  confidence_threshold: 0.60
+  confidence_threshold: 0.70
   imgsz: 64
 
-# ── Alertas ────────────────────────────────────────────────────────────────────
+# ── Alertas ─────────────────────────────────────────────────────────────
+#   - enabled: Prende/Apaga los modales y sonidos en la web.
+#   - sound: Activa el pitido "beep" cuando salta un "sin_casco".
 alerts:
   enabled: true
-  sound: false
+  sound: true
 
-# ── Servidor ───────────────────────────────────────────────────────────────────
+# ── Servidor web (Flask) ─────────────────────────────────────────────────────
 server:
   host: "0.0.0.0"
   port: 5000
   debug: true
 
 # ── Logging ────────────────────────────────────────────────────────────────────
-# access_logs:  Si es true, Flask muestra los logs de cada request HTTP.
+#   - access_logs: muestra los logs de flask, apagado para mejos lectura
 logging:
   access_logs: false
 
 # ── Rutas de Almacenamiento ───────────────────────────────────────────────────
-# Configura dónde se guardan los datos generados por el sistema.
+# Donde se guarda la evidencia de los infractores.
 paths:
-  # Ubicación del archivo de base de datos SQLite
   database: "data/detections.db"
-  # Directorio base donde se guardarán los recortes (crops) de los motociclistas
   crops_dir: "crops"
 
 # ── Opciones de Guardado de Crops ──────────────────────────────────────────────
+# Implicancia: Controla cuánto disco duro querés gastar.
+#   - motos: Guarda la foto entera de la moto de los infractores (Recomendado = true).
+#   - cabezas: Guarda solo los casquitos chiquitos.
+#   - tracking: Guarda TODOS los frames de TODAS las motos.
 save_crops:
   motos: true  
   cabezas: false
@@ -88,37 +104,26 @@ save_crops:
 # ═══════════════════════════════════════════════════════════════════════════════
 # CÁMARAS
 # ═══════════════════════════════════════════════════════════════════════════════
-#
-# Cada cámara necesita los siguientes campos:
-#   - id:      Identificador numérico único.
-#   - name:    Nombre descriptivo que se muestra en la interfaz.
-#   - source:  URL del stream HLS (.m3u8)
-#   - lat:     Latitud (para el mapa de calor, solo relevante en modo en vivo).
-#   - lng:     Longitud (para el mapa de calor).
-#
-# IMPORTANTE:
-#   - Se pueden configurar hasta 4 cámaras.
-#
-# ═══════════════════════════════════════════════════════════════════════════════
-
+# Lista infinita de cámaras.
+#   - source: Puede ser un .m3u8, un .mp4 local o un link directo.
 cameras:
   # - id: 1
-  #   name: "Tupã - Brasil x Caingangs"
-  #   source: "https://ipservice.aovivonanet.com.br:4433/hls/tupa-brasil-x-caingangs/index.m3u8"
-  #   #source: "https://www.youtube.com/watch?v=UemFRPrl1hk"
-  #   lat: -21.925451
-  #   lng: -50.522564
+  #   name: "Tupã - Tamoios x Aimorés"
+  #   source: "https://ipservice.aovivonanet.com.br:4433/hls/tupa-tamoios-x-aimores/index.m3u8"
+  #   #source: "https://www.youtube.com/watch?v=HdaWcBamcSA"
+  #   lat: -21.928436
+  #   lng: -50.512060
 
-  - id: 1
-    name: "Tupã - Tamoios x Aimorés"
-    source: "https://ipservice.aovivonanet.com.br:4433/hls/tupa-tamoios-x-aimores/index.m3u8"
-    #source: "https://www.youtube.com/watch?v=HdaWcBamcSA"
-    lat: -21.928436
-    lng: -50.512060
+  # - id: 2
+  #   name: "Tupã - Tamoios x Caingangs"
+  #   source: "https://ipservice.aovivonanet.com.br:4433/hls/tupa-tamois-x-caingangs/index.m3u8"
+  #   #source: "https://www.youtube.com/watch?v=WSm_r0eNl1E"
+  #   lat: -21.931936
+  #   lng: -50.516157
 
-  - id: 2
-    name: "Tupã - Tamoios x Caingangs"
-    source: "https://ipservice.aovivonanet.com.br:4433/hls/tupa-tamois-x-caingangs/index.m3u8"
-    #source: "https://www.youtube.com/watch?v=WSm_r0eNl1E"
-    lat: -21.931936
-    lng: -50.516157
+  - id: 3
+    name: "Tupã - Brasil x Caingangs"
+    #source: "https://ipservice.aovivonanet.com.br:4433/hls/tupa-brasil-x-caingangs/index.m3u8"
+    source: "https://www.youtube.com/watch?v=UemFRPrl1hk"
+    lat: -21.925451
+    lng: -50.522564

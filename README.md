@@ -72,12 +72,17 @@ Los modelos ("pesos") no están incluidos en este repositorio debido a su tamañ
 5. Colocá esos archivos en la carpeta principal de este proyecto (`final_img/`) y **renombralos** exactamente así:
    * Al modelo del detector llamalo: `detector.pt`
    * Al modelo del clasificador llamalo: `clasificador.pt`
+6. *(Opcional pero recomendado)* Exportar el detector a TensorRT para mayor velocidad:
+   ```bash
+   yolo export model=detector.pt format=engine imgsz=960 half=True
+   ```
+   Esto genera `detector.engine`. Actualizá `config/config.yaml` para apuntar al `.engine`.
 
 ---
 
 ## ▶️ Ejecución del Sistema
 
-Una vez que tengas tus dependencias instaladas y los dos archivos `.pt` ubicados en la raíz del proyecto, ejecutá:
+Una vez que tengas tus dependencias instaladas y los dos archivos de modelos ubicados en la raíz del proyecto, ejecutá:
 
 ```bash
 python app/app.py
@@ -102,25 +107,39 @@ El archivo principal de configuración es `config/config.yaml`. Ahí definís qu
 cameras:
   - id: 1
     name: "Cámara Av. Corrientes"
-    source: "https://url-del-stream/index.m3u8"  # Stream HLS
+    source: "https://url-del-stream/index.m3u8"  # Stream HLS o URL de YouTube
     lat: -34.603722
     lng: -58.381592
 ```
-*Tipos de `source` soportados:* Links de streams HLS (`.m3u8`) o videos en vivo de Youtube.
+*Tipos de `source` soportados:* Links de streams HLS (`.m3u8`) o videos en vivo de YouTube.
 
 ### 3. Ajustar la Sensibilidad y Rendimiento
 En el mismo `config.yaml`, podés ajustar qué tan estricto y rápido es el sistema:
 
 ```yaml
+video:
+  fps: 10                        # FPS de captura del stream
+  resolution: [1280, 720]        # Resolución de procesamiento
+
 detection:
-  confidence_threshold: 0.15     # Sensibilidad para detectar motos y cabezas
-  process_interval: 0.05         # Invervalo cada cuanto se analizan frames (Fracción de segundos) Aprox 20 FPS
+  confidence_threshold: 0.30    # Sensibilidad para detectar motos
+  head_confidence: 0.50         # Sensibilidad para detectar cabezas
+  inside_threshold: 0.85        # % mínimo de la cabeza dentro del bbox de la moto
+  frames_to_classify: 5         # Votos mínimos idénticos para veredicto rápido
+  max_frames_to_collect: 10     # Máximo de frames de calidad en memoria por moto
+  imgsz: 960                    # Tamaño de inferencia del detector
+
 classification:
-  confidence_threshold: 0.50     # Sensibilidad para clasificar casco
+  confidence_threshold: 0.70    # Sensibilidad para clasificar casco
+
+models:
+  detection: "detector.engine"  # TensorRT (.engine) o PyTorch (.pt)
+  classification: "clasificador.pt"
 ```
 
 ### 4. Archivos Generados Automáticamente
 Mientras el sistema funciona, irá generando los siguientes archivos:
 - **`data/detections.db`**: Base de datos SQLite. Guarda todas las métricas.
-- **`crops/cam_<ID>/sin_casco/`**: Acá se guardan físicamente las fotos (`.jpg`) recortadas de los infractores.
-- **`crops/cam_<ID>/con_casco/`**: Recortes de la gente que sí cumple la norma.
+- **`crops/cam_<ID>/motos/sin_casco/`**: Fotos (`.jpg`) de la moto entera de los infractores.
+- **`crops/cam_<ID>/motos/con_casco/`**: Fotos de motos con casco.
+- **`crops/cam_<ID>/motos/<status>/debug.txt`**: Log de texto con detalle de cada clasificación (votos, confianzas, frames).

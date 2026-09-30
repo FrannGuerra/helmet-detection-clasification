@@ -528,10 +528,7 @@ def start_processing_endpoint():
     return jsonify({
         'status': 'ok',
         'mode': mode,
-        'cameras': [c.to_dict() for c in cameras_to_start],
-        'settings': {
-            'youtube_delay_ms': config.get('video', {}).get('youtube_delay_ms', 5000)
-        }
+        'cameras': [c.to_dict() for c in cameras_to_start]
     })
 
 @app.route('/api/stop', methods=['POST'])

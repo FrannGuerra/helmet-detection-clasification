@@ -19,7 +19,6 @@ let alertSoundMuted   = (localStorage.getItem('alertSoundMuted') === 'true') || 
 let activeTab         = 'monitoring'; // 'monitoring' | 'dashboard'
 let chartHourly       = null;
 let chartCamera       = null;
-let youtubeDelayMs    = 5000;
 
 // Timers de auto-refresh (para poder limpiarlos)
 let metricsInterval = null;
@@ -72,7 +71,6 @@ async function startMode() {
 
         currentMode = 'live';
         activeCameras = data.cameras || [];
-        youtubeDelayMs = data.settings?.youtube_delay_ms || 5000;
 
         // Actualizar UI
         document.getElementById('camera-count').textContent = `${activeCameras.length} cámaras`;
@@ -478,13 +476,8 @@ socket.on('disconnect', () => updateConnectionStatus(false));
 
 socket.on('metrics_update', data => {
     if (!currentMode) return;
-    const cam = activeCameras.find(c => c.id === data.camera_id);
-    const isYoutube = cam && (cam.source.includes('youtube.com') || cam.source.includes('youtu.be'));
-    const delay = isYoutube ? youtubeDelayMs : 0;
-
-    setTimeout(() => {
-        // Panel mini por cámara
-        const id = data.camera_id;
+    // Panel mini por cámara
+    const id = data.camera_id;
         if (id != null) {
             const con  = data.riders_with_helmet    || 0;
             const sin  = data.riders_without_helmet || 0;
@@ -496,32 +489,26 @@ socket.on('metrics_update', data => {
             if (sinEl)  sinEl.textContent  = sin;
             if (rateEl) rateEl.textContent = rate.toFixed(0);
         }
-        // Panel global
-        updateAccumulatedMetrics();
-    }, delay);
+    // Panel global
+    updateAccumulatedMetrics();
 });
 
 socket.on('violation_detected', data => {
     if (!currentMode) return;
-    const cam = activeCameras.find(c => c.id === data.camera_id);
-    const isYoutube = cam && (cam.source.includes('youtube.com') || cam.source.includes('youtu.be'));
-    const delay = isYoutube ? youtubeDelayMs : 0;
-
-    setTimeout(() => {
-        addAlert(data);
-        playAlertSound();
-        const card = document.getElementById(`camera-card-${data.camera_id}`);
-        if (card) {
-            card.classList.remove('violation-flash');
-            void card.offsetWidth;
-            card.classList.add('violation-flash');
-            setTimeout(() => card.classList.remove('violation-flash'), 1500);
-        }
-        updateHeatmap();
-        if (activeTab === 'dashboard') {
-            if (typeof fetchDashboardStats === 'function') fetchDashboardStats();
-        }
-    }, delay);
+    
+    addAlert(data);
+    playAlertSound();
+    const card = document.getElementById(`camera-card-${data.camera_id}`);
+    if (card) {
+        card.classList.remove('violation-flash');
+        void card.offsetWidth;
+        card.classList.add('violation-flash');
+        setTimeout(() => card.classList.remove('violation-flash'), 1500);
+    }
+    updateHeatmap();
+    if (activeTab === 'dashboard') {
+        if (typeof fetchDashboardStats === 'function') fetchDashboardStats();
+    }
 });
 
 socket.on('camera_finished', data => {

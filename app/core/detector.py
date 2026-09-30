@@ -5,8 +5,10 @@ from typing import Any, Dict, List
 
 import cv2
 import numpy as np
+import torch
 from PIL import Image
 from ultralytics import YOLO
+from ultralytics.engine.results import Boxes as UltralyticsBoxes
 from ultralytics.trackers.byte_tracker import BYTETracker
 from ultralytics.utils import IterableSimpleNamespace
 
@@ -284,10 +286,23 @@ class MotorcycleDetector:
             moto_boxes_obj = boxes_obj[moto_mask]
 
             if len(moto_boxes_obj) > 0:
-                # BYTETracker.update() espera un objeto con .conf, .cls, .xywh
-                # que soporte boolean indexing. boxes_obj[mask] lo hace correctamente.
+                # Fix de compatibilidad con versiones nuevas de ultralytics (Python 3.14+):
+                # boxes_obj[mask] devuelve una "vista" con índices internos desfasados
+                # que causa IndexError en BYTETracker.update() al hacer bboxes[remain_inds].
+                # Solución: reconstruir un objeto Boxes limpio desde cero con tensores frescos.
+                moto_xyxy = boxes_obj.xyxy[moto_mask].cpu()     # (N, 4) tensor — CPU para que numpy pueda leerlo
+                moto_conf = boxes_obj.conf[moto_mask].cpu()     # (N,)   tensor
+                moto_cls  = boxes_obj.cls[moto_mask].cpu()      # (N,)   tensor
+                # Boxes espera shape (N, 6): [x1, y1, x2, y2, conf, cls]
+                moto_data = torch.cat([
+                    moto_xyxy,
+                    moto_conf.unsqueeze(1),
+                    moto_cls.unsqueeze(1)
+                ], dim=1)
+                fresh_moto_boxes = UltralyticsBoxes(moto_data, results.orig_shape)
+
                 # Retorna np.array de shape (N, 8): [x1,y1,x2,y2,track_id,score,cls,idx]
-                tracks = self.tracker.update(moto_boxes_obj.cpu(), frame)
+                tracks = self.tracker.update(fresh_moto_boxes, frame)
 
                 for t in tracks:
                     x1, y1, x2, y2 = map(int, t[:4])

@@ -168,7 +168,7 @@ def dibujar_anotaciones(frame: np.ndarray, riders: list) -> None:
 
 
 def analizar(video_path: str, intervalo: float, conf_det: float, conf_cls: float, 
-             video_salida: str = None, procesar_todo: bool = False) -> None:
+             video_salida: str = None, procesar_todo: bool = False, config: dict = None) -> None:
     """
     Pipeline principal: lee el video frame a frame y lo pasa por el
     mismo Detector + Clasificador que usa la app en producción.
@@ -185,8 +185,9 @@ def analizar(video_path: str, intervalo: float, conf_det: float, conf_cls: float
     dir_con.mkdir(parents=True, exist_ok=True)
     dir_sin.mkdir(parents=True, exist_ok=True)
 
-    # Cargar configuración base y sobreescribir umbrales si el usuario los pasó
-    config = load_config(CONFIG_PATH)
+    # Sobreescribir umbrales si el usuario los pasó
+    if config is None:
+        config = load_config(CONFIG_PATH)
     config['detection']['confidence_threshold']     = conf_det
     config['classification']['confidence_threshold'] = conf_cls
 
@@ -410,16 +411,25 @@ def main():
         '--procesar-todo', action='store_true',
         help='Ignora el intervalo y procesa el 100%% de los frames (se activa automáticamente si hay --video-salida)'
     )
+    parser.add_argument(
+        '--config', type=str, default='config/config_offline.yaml',
+        help='Ruta al archivo config.yaml (default: config/config_offline.yaml para máxima precisión)'
+    )
     args = parser.parse_args()
 
     # Leer TODOS los defaults desde config/config.yaml — nada hardcodeado en este script.
     # El config es la fuente de verdad única, igual que en la app.
-    cfg = load_config(CONFIG_PATH)
+    cfg_path = os.path.join(_PROJECT_ROOT, args.config) if not os.path.isabs(args.config) else args.config
+    if not os.path.exists(cfg_path):
+        # Fallback al normal si no existe el offline
+        cfg_path = CONFIG_PATH
+    
+    cfg = load_config(cfg_path)
     conf_det  = args.conf_det  if args.conf_det  is not None else cfg['detection']['confidence_threshold']
     conf_cls  = args.conf_cls  if args.conf_cls  is not None else cfg['classification']['confidence_threshold']
     intervalo = args.intervalo if args.intervalo is not None else cfg['detection']['process_interval']
 
-    analizar(args.video, intervalo, conf_det, conf_cls, args.video_salida, args.procesar_todo)
+    analizar(args.video, intervalo, conf_det, conf_cls, args.video_salida, args.procesar_todo, config=cfg)
 
 
 if __name__ == '__main__':

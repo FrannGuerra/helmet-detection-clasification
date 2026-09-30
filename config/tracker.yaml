@@ -1,18 +1,48 @@
-# ==============================================================================
-# CONFIGURACIÓN DEL TRACKER — ByteTrack
-# ==============================================================================
-# NOTA: El tracker solo recibe detecciones de MOTOS (no cabezas).
-# Las cabezas se asocian geométricamente sin necesidad de ID de tracking.
-# Esto evita que una cabeza "robe" el track_id de una moto cercana.
+# ═══════════════════════════════════════════════════════════════════════════════
+# CONFIGURACIÓN DEL TRACKER
+# ═══════════════════════════════════════════════════════════════════════════════
+# Este tracker está configurado para recibir ÚNICAMENTE recuadros de MOTOS.
+# A las cabezas NO se les asigna ID, sino que se asocian a la moto por superposición.
 
-# Motor de tracking.
-# CAMBIO: bytetrack en vez de botsort.
-# Con cámaras fijas, el ReID de BoT-SORT no aporta y puede causar swaps de ID.
-# ByteTrack es más simple y más estable para este caso de uso.
+# ── Algoritmo ──────────────────────────────────────────────────────────────────
+# tracker_type: 'bytetrack' o 'botsort'. 
+#               Para cámaras fijas en la calle, ByteTrack es superior.
+#               ByteTrack usa solo física (velocidad e inercia). Mas simple.
 tracker_type: bytetrack
+
+# ── Umbrales de Confianza ─────────────
+# track_high_thresh: Detecciones con confianza mayor a esto son "Confiables".
+#                    Implicancia: Son las primeras que el tracker intenta unir 
+#                    con el historial. Bajarlo a 0.20 ayuda a no perder la moto a lo lejos.
 track_high_thresh: 0.20
+
+# track_low_thresh:  Detecciones con confianza entre `low` y `high` son "Inciertas".
+#                    Implicancia: ByteTrack usa estas detecciones dudosas solo para 
+#                    mantener vivo un ID que ya venía siguiendo (ej: moto tapada por un árbol).
 track_low_thresh: 0.10
+
+# new_track_thresh:  Umbral para crear un ID nuevo.
+#                    Exige que la moto sea detectada con al menos 0.40
+#                    para empezar a seguirla. Evita "tracks fantasmas".
 new_track_thresh: 0.40
+
+# ── Memoria e Inercia ─────────────────────────────────────────────────────────
+# track_buffer:  La memoria RAM del tracker. ¿Cuántos frames espera a una moto perdida
+#                antes de darla por muerta y borrar su ID?
+#                Implicancia: Si corre a 8 FPS, un buffer de 60 significa que recuerda
+#                a la moto durante 7.5 segundos (60 / 8 = 7.5) aunque desaparezca de 
+#                la pantalla. Crucial para semáforos o camiones que tapan la visión.
 track_buffer: 60
+
+# match_thresh:  Tolerancia de movimiento (0.0 a 1.0).
+#                Implicancia: 0.90 es una tolerancia ALTÍSIMA. Significa que entre el
+#                frame anterior y el actual, el tracker permite que la moto se haya 
+#                desplazado muchísimo y aún así le mantiene el ID. Ideal cuando los 
+#                FPS son bajos (8-10) porque la moto "salta" más espacio entre foto y foto.
 match_thresh: 0.90
+
+# fuse_score:    ¿Fusionar el nivel de confianza de YOLO con la distancia física?
+#                Implicancia: True hace que el tracker prefiera asignarle un ID a una
+#                mancha de la que YOLO está muy seguro (90%), antes que a una mancha de la
+#                que duda (20%), si ambas están cerca. Aumenta mucho la estabilidad.
 fuse_score: True
